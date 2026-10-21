@@ -1,0 +1,165 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TimeBuddy - Free Online Timer</title>
+<meta name="description" content="Use TimeBuddy for a free online stopwatch, countdown timer, focus timer and digital clock.">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#0b1020;color:#f5f7ff;font-family:Arial,sans-serif}
+header{text-align:center;padding:25px 12px}
+h1{color:#78e0c1;font-size:32px;margin:5px}
+header p{color:#b8c4dc}
+nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding:10px}
+button{border:0;border-radius:10px;padding:12px 16px;background:#263650;color:white;font-size:15px;cursor:pointer}
+nav button.active,.primary{background:#78e0c1;color:#07121c;font-weight:bold}
+main{max-width:700px;margin:15px auto;padding:12px}
+.card{background:#151f34;border:1px solid #34415b;border-radius:18px;padding:24px 14px;text-align:center}
+.display{font-size:clamp(38px,10vw,65px);font-weight:bold;margin:28px 0;font-variant-numeric:tabular-nums}
+.controls{display:flex;justify-content:center;flex-wrap:wrap;gap:9px}
+input{width:85px;padding:12px;border-radius:8px;border:1px solid #52617a;background:#0b1020;color:white;font-size:18px;text-align:center}
+label{color:#b8c4dc}
+#laps{text-align:left;margin-top:20px}
+.lap{padding:10px;border-bottom:1px solid #34415b;display:flex;justify-content:space-between}
+.view{display:none}.view.active{display:block}
+.tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:18px}
+.tool{background:#151f34;border:1px solid #34415b;padding:18px;border-radius:14px}
+.tool p,footer{color:#b8c4dc;line-height:1.6}
+footer{text-align:center;padding:25px 10px;font-size:13px}
+</style>
+</head>
+<body>
+<header>
+<h1>⏱ TimeBuddy</h1>
+<p>Your Free Online Time Tools</p>
+</header>
+<nav>
+<button class="active" data-page="stopwatch">Stopwatch</button>
+<button data-page="timer">Countdown</button>
+<button data-page="focus">Focus Timer</button>
+<button data-page="clock">Digital Clock</button>
+</nav>
+<main>
+<section id="stopwatch" class="view active">
+<div class="card">
+<h2>Online Stopwatch</h2>
+<div class="display" id="sw">00:00:00.00</div>
+<div class="controls">
+<button class="primary" id="swStart">Start</button>
+<button id="lapBtn">Lap</button>
+<button id="swReset">Reset</button>
+</div>
+<div id="laps"></div>
+</div>
+</section>
+<section id="timer" class="view">
+<div class="card">
+<h2>Countdown Timer</h2>
+<div class="display" id="timerDisplay">05:00</div>
+<p>
+<label>Minutes <input id="minutes" type="number" min="0" max="999" value="5"></label>
+<label>Seconds <input id="seconds" type="number" min="0" max="59" value="0"></label>
+</p>
+<div class="controls">
+<button class="primary" id="timerStart">Start</button>
+<button id="timerPause">Pause</button>
+<button id="timerReset">Reset</button>
+</div>
+<p id="timerMessage" aria-live="polite"></p>
+</div>
+</section>
+<section id="focus" class="view">
+<div class="card">
+<h2>Focus Timer</h2>
+<p>25 minutes focus, then take a break.</p>
+<div class="display" id="focusDisplay">25:00</div>
+<div class="controls">
+<button class="primary" id="focusStart">Start Focus</button>
+<button id="focusPause">Pause</button>
+<button id="focusReset">Reset</button>
+</div>
+</div>
+</section>
+<section id="clock" class="view">
+<div class="card">
+<h2>Digital Clock</h2>
+<div class="display" id="clockDisplay">--:--:--</div>
+<p>Your device's local time</p>
+</div>
+</section>
+<div class="tools">
+<div class="tool"><h3>⏱ Stopwatch</h3><p>Measure elapsed time and record laps.</p></div>
+<div class="tool"><h3>⌛ Countdown</h3><p>Set a timer for study, cooking or exercise.</p></div>
+<div class="tool"><h3>🎯 Focus</h3><p>Stay focused with a 25-minute session.</p></div>
+<div class="tool"><h3>🕒 Digital Clock</h3><p>Check the current time on your device.</p></div>
+</div>
+</main>
+<footer>TimeBuddy · Free online time tools<br>Keep this page open while using a timer.</footer>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('nav button').forEach(btn=>{
+btn.addEventListener('click',()=>{
+document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b===btn));
+document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===btn.dataset.page));
+});
+});
+function format(ms,decimals=true){
+ms=Math.max(0,ms);
+let h=Math.floor(ms/3600000),m=Math.floor(ms/60000)%60,s=Math.floor(ms/1000)%60;
+let base=decimals?[h,m,s].map(n=>String(n).padStart(2,'0')).join(':'):[Math.floor(ms/60000),s].map(n=>String(n).padStart(2,'0')).join(':');
+return decimals?base+'.'+String(Math.floor(ms/10)%100).padStart(2,'0'):base;
+}
+let swRunning=false,swElapsed=0,swStartAt=0,swFrame=0,lapCount=0;
+function drawSW(){if(!swRunning)return;swElapsed=performance.now()-swStartAt;$('sw').textContent=format(swElapsed);swFrame=requestAnimationFrame(drawSW)}
+$('swStart').onclick=()=>{
+if(swRunning){swRunning=false;cancelAnimationFrame(swFrame);$('swStart').textContent='Resume'}
+else{swRunning=true;swStartAt=performance.now()-swElapsed;$('swStart').textContent='Pause';drawSW()}
+};
+$('lapBtn').onclick=()=>{
+if(swElapsed===0&&!swRunning)return;
+lapCount++;let row=document.createElement('div');row.className='lap';
+row.innerHTML='<span>Lap '+lapCount+'</span><span>'+format(swElapsed)+'</span>';
+$('laps').prepend(row);
+};
+$('swReset').onclick=()=>{swRunning=false;cancelAnimationFrame(swFrame);swElapsed=0;lapCount=0;$('sw').textContent='00:00:00.00';$('swStart').textContent='Start';$('laps').innerHTML=''};
+function beep(){
+try{let C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+let c=new C(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=800;g.gain.value=.15;o.start();setTimeout(()=>{o.stop();c.close()},600);
+}catch(e){}
+}
+let timerRemaining=300000,timerEnd=0,timerRunning=false,timerInterval=null;
+function readTimer(){return Math.max(0,(Number($('minutes').value)||0)*60000+(Number($('seconds').value)||0)*1000)}
+function drawTimer(){$('timerDisplay').textContent=format(timerRemaining,false)}
+function timerTick(){
+timerRemaining=Math.max(0,timerEnd-Date.now());drawTimer();
+if(timerRemaining<=0){clearInterval(timerInterval);timerRunning=false;$('timerStart').textContent='Start';$('timerMessage').textContent="Time's up!";beep()}
+}
+$('timerStart').onclick=()=>{
+if(timerRunning)return;
+if(timerRemaining<=0)timerRemaining=readTimer();
+if(timerRemaining<=0)return;
+timerEnd=Date.now()+timerRemaining;timerRunning=true;$('timerMessage').textContent='';
+$('timerStart').textContent='Running';timerInterval=setInterval(timerTick,100);
+};
+$('timerPause').onclick=()=>{if(timerRunning){timerTick();clearInterval(timerInterval);timerRunning=false;$('timerStart').textContent='Resume'}};
+$('timerReset').onclick=()=>{clearInterval(timerInterval);timerRunning=false;timerRemaining=readTimer();drawTimer();$('timerStart').textContent='Start';$('timerMessage').textContent=''};
+$('minutes').onchange=$('seconds').onchange=()=>{if(!timerRunning){timerRemaining=readTimer();drawTimer()}};
+let focusRemaining=1500000,focusEnd=0,focusRunning=false,focusInterval=null;
+function drawFocus(){$('focusDisplay').textContent=format(focusRemaining,false)}
+function focusTick(){
+focusRemaining=Math.max(0,focusEnd-Date.now());drawFocus();
+if(focusRemaining<=0){clearInterval(focusInterval);focusRunning=false;$('focusStart').textContent='Start Focus';beep()}
+}
+$('focusStart').onclick=()=>{
+if(focusRunning)return;if(focusRemaining<=0)focusRemaining=1500000;
+focusEnd=Date.now()+focusRemaining;focusRunning=true;$('focusStart').textContent='Running';focusInterval=setInterval(focusTick,100);
+};
+$('focusPause').onclick=()=>{if(focusRunning){focusTick();clearInterval(focusInterval);focusRunning=false;$('focusStart').textContent='Resume'}};
+$('focusReset').onclick=()=>{clearInterval(focusInterval);focusRunning=false;focusRemaining=1500000;drawFocus();$('focusStart').textContent='Start Focus'};
+function clockTick(){$('clockDisplay').textContent=new Date().toLocaleTimeString('en-GB',{hour12:false})}
+clockTick();setInterval(clockTick,250);drawTimer();drawFocus();
+</script>
+</body>
+</html>
